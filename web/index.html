@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSignal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <progress id="transfer_progress" value="0" max="100"></progress>
+    <header>
+        <div id="brand_group">
+            <div id="status_indicator"></div>
+            <h1>WebSignal</h1>
+        </div>
+        <div id="user_info">
+            <span id="username"></span>
+            <span id="user_count"></span>
+        </div>
+    </header>
+    <main>
+        <section id="user_list_overlay">
+            <ul id="active_users"></ul>
+        </section>
+        <section id="chat_area">
+            <ul id="messages"></ul>
+        </section>
+        <section id="input_area">
+            <input type="file" id="file_input" multiple>
+            <button id="custom_file_btn" type="button">
+                <span>+</span>
+            </button>
+            <input type="text" id="message_input" placeholder="MESSAGE" autocomplete="on" maxlength="2048">
+            <button id="send_btn">SEND</button>
+        </section>
+    </main>
+</body>
+</html>

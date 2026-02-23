@@ -1,0 +1,352 @@
+:root {
+    --primary: #0A0F1A;
+    --secondary: #1E2230;
+    --accent: #E46;
+    --text: #F5F6FA;
+    --bubble_user: #393E54;
+    --bubble_other: #23263A;
+    --status_off: #555;
+    --status_on: #0F8;
+    --border_radius: 16px;
+    --transition: 0.1s ease;
+    --font: monospace, serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--primary);
+    color: var(--text);
+    font-family: var(--font);
+    margin: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+#transfer_progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    appearance: none;
+    border: none;
+    background: transparent;
+    z-index: 100;
+}
+
+#transfer_progress::-webkit-progress-bar {
+    background: transparent;
+}
+
+#transfer_progress::-webkit-progress-value {
+    background: var(--accent);
+}
+
+#transfer_progress::-moz-progress-bar {
+    background: var(--accent);
+}
+
+header {
+    background: var(--secondary);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--accent);
+    z-index: 10;
+}
+
+#brand_group {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+#status_indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--status_off);
+    transition: background 0.3s;
+}
+
+#status_indicator.online {
+    background: var(--status_on);
+    box-shadow: 0 0 8px var(--status_on);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+#user_info {
+    display: flex;
+    gap: 1rem;
+    font-weight: 600;
+}
+
+#username {
+    color: var(--accent);
+}
+
+#user_count {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#user_list_overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 250px;
+    max-height: 100%;
+    background: var(--secondary);
+    border-left: 1px solid var(--accent);
+    z-index: 20;
+    display: none;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+#user_list_overlay.visible {
+    display: block;
+}
+
+#active_users {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#active_users li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #FFF1;
+    font-size: 0.9rem;
+}
+
+#chat_area {
+    flex: 1 1 0%;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+}
+
+#messages {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.message {
+    max-width: 85%;
+    padding: 0.8rem 1rem;
+    border-radius: var(--border_radius);
+    position: relative;
+    line-height: 1.4;
+    word-wrap: break-word;
+    animation: fade_in 0.15s ease-out;
+}
+
+@keyframes fade_in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+    align-self: flex-end;
+    background: var(--bubble_user);
+    border-bottom-right-radius: 4px;
+}
+
+.message.other {
+    align-self: flex-start;
+    background: var(--bubble_other);
+    border-bottom-left-radius: 4px;
+}
+
+.meta {
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+    opacity: 0.6;
+    display: block;
+    text-transform: uppercase;
+}
+
+.system {
+    align-self: center;
+    font-size: 0.75rem;
+    opacity: 0.4;
+    text-transform: uppercase;
+    margin: 0.5rem 0;
+}
+
+#input_area {
+    background: var(--secondary);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-shrink: 0;
+}
+
+#file_input {
+    display: none;
+}
+
+#message_input {
+    flex: 1;
+    background: var(--primary);
+    border: 1px solid transparent;
+    border-radius: 25px;
+    padding: 0.8rem 1.2rem;
+    color: var(--text);
+    outline: none;
+}
+
+#message_input:focus {
+    border-color: var(--accent);
+}
+
+#send_btn, #custom_file_btn {
+    background: var(--accent);
+    color: #FFF;
+    border: none;
+    border-radius: 25px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+#custom_file_btn {
+    width: 45px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+#send_btn {
+    padding: 0 1.5rem;
+}
+
+#send_btn:active, #custom_file_btn:active {
+    transform: scale(0.95);
+}
+
+.file_message {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.file_message_content {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: transparent;
+}
+
+.file_image_fullbubble {
+    display: block;
+    max-width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+}
+
+.native_video_player {
+    width: 100%;
+    display: block;
+    border-radius: 10px;
+}
+
+.native_audio_player {
+    width: 100%;
+    display: block;
+    min-width: 300px;
+    min-height: 50px;
+    border-radius: 100px;
+}
+
+.text_preview {
+    margin: 0;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    background: #000;
+    color: #0F0;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.generic_file_bubble {
+    background: var(--primary);
+    height: 56px;
+    padding: 0 70px 0 1.5rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.file_download_btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--secondary);
+    color: #FFF;
+    text-decoration: none;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    z-index: 5;
+    font-size: 1.4rem;
+    line-height: 1;
+    border: 1px solid var(--accent);
+}
+
+video::-webkit-media-controls-panel {
+    background-color: transparent;
+}
+
+audio::-webkit-media-controls-panel {
+    background-color: var(--secondary);
+}
+
+@media (max-width: 600px) {
+    .message { max-width: 92%; }
+    #send_btn { padding: 0 1rem; font-size: 0.8rem; }
+    #user_list_overlay { width: 100%; }
+}
