@@ -12,7 +12,10 @@ use axum::{
 use clap::Parser;
 use dashmap::DashMap;
 use futures_util::{SinkExt, StreamExt};
+use get_if_addrs::get_if_addrs;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
+use qrcode::QrCode;
+use qrcode::render::unicode;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -27,13 +30,11 @@ const HTML_DATA: &str = include_str!("../web/index.html");
 const CSS_DATA: &str = include_str!("../web/style.css");
 const JS_DATA: &str = include_str!("../web/script.js");
 
-/// A locally hosted web app for messaging and file sharing.
 #[derive(Parser)]
 #[command(
     name = "websignal",
     version,
-    about = "A locally hosted web app for messaging and file sharing.",
-    long_about = "A small, fast web messaging app with file sharing features and smart shutdown behavior, enabling group chatting without internet."
+    about = "A locally hosted web app for messaging and file sharing."
 )]
 struct Cli {}
 
@@ -73,7 +74,6 @@ struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize Clap parsing
     let _ = Cli::parse();
 
     let (broadcast_tx, _) = broadcast::channel::<Message>(1024);
@@ -85,9 +85,36 @@ async fn main() -> Result<()> {
         shutdown_tx,
     });
 
+    // Attempt IP discovery safely
+    let local_ip = match get_if_addrs() {
+        Ok(ifaces) => ifaces
+            .into_iter()
+            .find(|iface| !iface.is_loopback() && iface.ip().is_ipv4())
+            .map(|iface| iface.ip().to_string())
+            .unwrap_or_else(|| "0.0.0.0".to_string()),
+        Err(_) => "0.0.0.0".to_string(),
+    };
+
+    // Print QR code if we have a valid IP
+    if local_ip != "0.0.0.0" {
+        let url = format!("http://{}:8080", local_ip);
+        if let Ok(code) = QrCode::new(url.as_bytes()) {
+            let scannable_data = code
+                .render::<unicode::Dense1x2>()
+                .dark_color(unicode::Dense1x2::Light)
+                .light_color(unicode::Dense1x2::Dark)
+                .build();
+            println!("\n[WebSignal] SCAN TO CONNECT:\n{}\n", scannable_data);
+        }
+    }
+
+    // mDNS is spawned in the background and its errors are suppressed from main
+    let ip_for_mdns = local_ip.clone();
     tokio::spawn(async move {
-        if let Err(e) = setup_mdns_responder().await {
-            eprintln!("[!] mDNS Error: {}", e);
+        if ip_for_mdns != "0.0.0.0" {
+            let _ = setup_mdns_responder(ip_for_mdns).await.map_err(|e| {
+                eprintln!("[!] mDNS suppressed: {}", e);
+            });
         }
     });
 
@@ -133,21 +160,30 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn setup_mdns_responder() -> Result<()> {
+async fn setup_mdns_responder(local_ip: String) -> Result<()> {
     let mdns_handler = ServiceDaemon::new().context("Failed to create mDNS daemon")?;
     let service_type = "_http._tcp.local.";
     let instance_name = "websignal";
     let host_name = "websignal.local.";
     let port = 8080;
-    let properties: HashMap<String, String> = HashMap::new();
 
-    let service_info =
-        ServiceInfo::new(service_type, instance_name, host_name, "", port, properties)
-            .context("Failed to create mDNS service info")?;
+    let mut properties = HashMap::new();
+    properties.insert("path".to_string(), "/".to_string());
+
+    let service_info = ServiceInfo::new(
+        service_type,
+        instance_name,
+        host_name,
+        &local_ip,
+        port,
+        properties,
+    )
+    .context("Failed to create mDNS service info")?;
 
     mdns_handler
         .register(service_info)
         .context("Failed to register mDNS service")?;
+
     Ok(())
 }
 

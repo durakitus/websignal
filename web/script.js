@@ -15,9 +15,17 @@ const dom_status = document.getElementById('status_indicator');
 const dom_progress = document.getElementById('transfer_progress');
 const dom_overlay = document.getElementById('user_list_overlay');
 const dom_active_list = document.getElementById('active_users');
+const dom_chat_area = document.getElementById('chat_area');
 
 let current_username = null;
 let pending_file_meta = null;
+
+const scroll_to_bottom = () => {
+    dom_chat_area.scrollTo({
+        top: dom_chat_area.scrollHeight,
+        behavior: 'smooth'
+    });
+};
 
 const sync_identity = () => {
     let name = localStorage.getItem('username');
@@ -91,18 +99,34 @@ const dispatch_message = () => {
 dom_send.onclick = dispatch_message;
 dom_input.onkeydown = (e) => { e.key === 'Enter' && dispatch_message() };
 dom_file_btn.onclick = () => dom_file.click();
-dom_count.onclick = () => dom_overlay.classList.toggle('visible');
+
+dom_count.onclick = (e) => {
+    e.stopPropagation();
+    dom_overlay.classList.toggle('visible');
+};
+
+dom_overlay.onclick = (e) => {
+    if (e.target === dom_overlay) {
+        dom_overlay.classList.remove('visible');
+    }
+};
+
+dom_input.onfocus = () => {
+    setTimeout(scroll_to_bottom, 300);
+};
 
 dom_file.onchange = async () => {
     for (const file of dom_file.files) {
         if (file.size > max_file_size_mb * 1024 * 1024) continue;
         dom_progress.value = 25;
+
         ws.send(JSON.stringify({
             type: 'file_meta',
             filename: file.name,
-            mimetype: file.type,
+            mimetype: file.type || 'application/octet-stream',
             user: current_username
         }));
+        
         ws.send(await file.arrayBuffer());
     }
     dom_file.value = '';
@@ -125,15 +149,11 @@ const render_ui_bubble = (data) => {
 
     dom_ul.appendChild(li);
     
-    const chat_area = document.getElementById('chat_area');
     const threshold = 150;
-    const isNearBottom = chat_area.scrollHeight - chat_area.scrollTop - chat_area.clientHeight < threshold;
+    const isNearBottom = dom_chat_area.scrollHeight - dom_chat_area.scrollTop - dom_chat_area.clientHeight < threshold;
 
-    if (isNearBottom) {
-        chat_area.scrollTo({
-            top: chat_area.scrollHeight,
-            behavior: 'smooth'
-        });
+    if (isNearBottom || is_me) {
+        scroll_to_bottom();
     }
 };
 
@@ -167,12 +187,10 @@ const build_media_node = (data) => {
     } else {
         node = document.createElement('div');
         node.className = 'generic_file_bubble';
-        
         const size = data.data.size;
         const sizeStr = size > 1024 * 1024 
             ? `${(size / (1024 * 1024)).toFixed(2)} MB` 
             : `${(size / 1024).toFixed(2)} KB`;
-            
         node.textContent = `${data.filename} • ${sizeStr}`;
     }
 
@@ -196,6 +214,5 @@ const render_system_text = (text) => {
     li.className = 'system';
     li.textContent = text;
     dom_ul.appendChild(li);
-    const chat_area = document.getElementById('chat_area');
-    chat_area.scrollTop = chat_area.scrollHeight;
+    scroll_to_bottom();
 };
