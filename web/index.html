@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>WebSignal</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
@@ -21,7 +21,9 @@
     </header>
     <main>
         <section id="user_list_overlay">
-            <ul id="active_users"></ul>
+            <div id="active_users_container">
+                <ul id="active_users"></ul>
+            </div>
         </section>
         <section id="chat_area">
             <ul id="messages"></ul>
