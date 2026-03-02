@@ -77,7 +77,7 @@ socket.onmessage = async (event) => {
         dom_active_users_list.innerHTML = '';
         parsed_data.users.forEach(user_entry => {
             const list_item = document.createElement('li');
-            list_item.textContent = user_entry === current_local_username ? `${user_entry} (YOU)` : user_entry;
+            list_item.textContent = user_entry === current_local_username ? `${user_entry} — YOU` : user_entry;
             dom_active_users_list.appendChild(list_item);
         });
     } else if (parsed_data.type === 'file_meta') {
@@ -167,8 +167,8 @@ const build_file_node = (file_payload) => {
     const video_extensions = ['mp4', 'mkv', 'webm', 'avi', 'mov'];
     const audio_extensions = ['mp3', 'm4a', 'ogg', 'flac', 'wav'];
     const image_extensions = ['jpg', 'png', 'webp', 'bmp', 'svg'];
-    const text_extensions = ['md', 'txt', 'log', 'properties', 'cfg'];
-    const code_extensions = ['py', 'rs', 'html', 'css', 'js'];
+    const text_extensions = ['md', 'txt', 'log', 'prop', 'cfg'];
+    const code_extensions = ['py', 'rs', 'kt', 'rb', 'cr'];
 
     if (video_extensions.includes(file_extension) || mime_type_string.includes('video')) {
         media_element = document.createElement('video');

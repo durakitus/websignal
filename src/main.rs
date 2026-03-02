@@ -34,7 +34,8 @@ const JS_DATA: &str = include_str!("../web/script.js");
 #[command(
     name = "websignal",
     version,
-    about = "A locally hosted web app for messaging and file sharing."
+    about = "A locally hosted web app for messaging and file sharing.",
+    long_about = "An offline, local messaging and file sharing web spp. Clients can access it through a standard web browser, and connect to a group chat for local messaging and sharing files over LAN."
 )]
 struct Cli {}
 
@@ -85,7 +86,6 @@ async fn main() -> Result<()> {
         shutdown_tx,
     });
 
-    // Attempt IP discovery safely
     let local_ip = match get_if_addrs() {
         Ok(ifaces) => ifaces
             .into_iter()
@@ -95,7 +95,6 @@ async fn main() -> Result<()> {
         Err(_) => "0.0.0.0".to_string(),
     };
 
-    // Print QR code if we have a valid IP
     if local_ip != "0.0.0.0" {
         let url = format!("http://{}:8080", local_ip);
         if let Ok(code) = QrCode::new(url.as_bytes()) {
@@ -108,12 +107,11 @@ async fn main() -> Result<()> {
         }
     }
 
-    // mDNS is spawned in the background and its errors are suppressed from main
     let ip_for_mdns = local_ip.clone();
     tokio::spawn(async move {
         if ip_for_mdns != "0.0.0.0" {
             let _ = setup_mdns_responder(ip_for_mdns).await.map_err(|e| {
-                eprintln!("[!] mDNS suppressed: {}", e);
+                eprintln!("[!] multicast suppressed: {}", e);
             });
         }
     });
@@ -137,7 +135,7 @@ async fn main() -> Result<()> {
             if !timer_state.user_mapping.is_empty() {
                 return;
             }
-            print!("\rWaiting for devices... {:02}s", i);
+            print!("\rWaiting for devices: {:02}", i);
             let _ = io::stdout().flush();
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
@@ -161,7 +159,7 @@ async fn main() -> Result<()> {
 }
 
 async fn setup_mdns_responder(local_ip: String) -> Result<()> {
-    let mdns_handler = ServiceDaemon::new().context("Failed to create mDNS daemon")?;
+    let mdns_handler = ServiceDaemon::new().context("Failed to create multicast daemon")?;
     let service_type = "_http._tcp.local.";
     let instance_name = "websignal";
     let host_name = "websignal.local.";
@@ -178,11 +176,11 @@ async fn setup_mdns_responder(local_ip: String) -> Result<()> {
         port,
         properties,
     )
-    .context("Failed to create mDNS service info")?;
+    .context("Failed to create multicast service info")?;
 
     mdns_handler
         .register(service_info)
-        .context("Failed to register mDNS service")?;
+        .context("Failed to register multicast service")?;
 
     Ok(())
 }
@@ -256,7 +254,7 @@ async fn handle_connection(
                                     .clone();
 
                                 if first_identified {
-                                    println!("\r[+] Device identified. Session locked.       ");
+                                    println!("\r[+] Device identified. Session locked.");
                                 }
 
                                 let identity = ChatPayload::Identity {
@@ -315,7 +313,7 @@ async fn handle_connection(
 
     shared_state.user_mapping.remove(&client_ip);
     if shared_state.user_mapping.is_empty() {
-        println!("\r[-] All identified devices disconnected. Shutting down gracefully...");
+        println!("\r[-] All identified devices disconnected. Shutting down the server.");
         let _ = shared_state.shutdown_tx.send(()).await;
     } else {
         let users: Vec<String> = shared_state
