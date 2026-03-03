@@ -29,6 +29,7 @@ use tokio::sync::{broadcast, mpsc};
 const HTML_DATA: &str = include_str!("../web/index.html");
 const CSS_DATA: &str = include_str!("../web/style.css");
 const JS_DATA: &str = include_str!("../web/script.js");
+const JSON_DATA: &str = include_str!("../web/manifest.json");
 
 #[derive(Parser)]
 #[command(
@@ -118,8 +119,9 @@ async fn main() -> Result<()> {
 
     let app_router = Router::new()
         .route("/", get(serve_index))
-        .route("/style.css", get(serve_css))
-        .route("/script.js", get(serve_js))
+        .route("/style.css", get(serve_style))
+        .route("/script.js", get(serve_script))
+        .route("/manifest.json", get(serve_manifest))
         .route("/ws", get(ws_entry))
         .with_state(shared_state.clone());
 
@@ -189,17 +191,24 @@ async fn serve_index() -> Html<&'static str> {
     Html(HTML_DATA)
 }
 
-async fn serve_css() -> impl IntoResponse {
+async fn serve_style() -> impl IntoResponse {
     Response::builder()
         .header("content-type", "text/css")
         .body(CSS_DATA.to_string())
         .unwrap()
 }
 
-async fn serve_js() -> impl IntoResponse {
+async fn serve_script() -> impl IntoResponse {
     Response::builder()
         .header("content-type", "application/javascript")
         .body(JS_DATA.to_string())
+        .unwrap()
+}
+
+async fn serve_manifest() -> impl IntoResponse {
+    Response::builder()
+        .header("content-type", "application/json")
+        .body(JSON_DATA.to_string())
         .unwrap()
 }
 

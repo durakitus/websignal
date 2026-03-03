@@ -1,0 +1,9 @@
+{
+  "name": "WebSignal LAN Chat",
+  "short_name": "WebSignal",
+  "description": "A LAN group chat and file sharing app.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0F1A",
+  "theme_color": "#1E2230"
+}
