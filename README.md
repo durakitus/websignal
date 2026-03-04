@@ -3,7 +3,7 @@
 > A web application based on a local server that runs from the command line.
 
 ## Overview
-WebSignal is a standalone server web app: when executed, it runs a server on the device, serving its built-in webpage as an app. It hosts a LAN group chat witj the capability to share files among those who have joined the chat. You can view common media files on the chat, but you can download any file shared here.
+WebSignal is a standalone server web app: when executed, it runs a server on the device, serving its built-in webpage as an app. It hosts a LAN group chat with the capability to share files among those who have joined the chat. You can view common media files on the chat, but you can download any file shared here.
 
 
 ## Features
@@ -21,6 +21,6 @@ cargo build --release
 ```
 
 ## Usage
-Since this is primarily a web app, just triggered througj the CLI, you simply run `websignal` on the command line. The tool starts the server in discovery mode for 30 seconds, closing automatically if no one connects. Additionally, it closes the server instantly if everyone disconnects — i.e., closes the page on their browser — to save resources, since it's designed to run even on constrained environments such as less powerful smartphones using Termux. You can access it through http://websignal.local:8080 if your device has the permissions and setup to use Multicast DNS — only privileged or "root" users in Termux, Android — or you can simply use your device's IP address on the Wi-Fi network as in http://<ip_address>:8080, which can be a common access point — meaning, that both the server and the clients are connected to it — or your own device's hotspot.
+Since this is primarily a web app, just triggered through the CLI, you simply run `websignal` on the command line. The tool starts the server in discovery mode for 30 seconds, closing automatically if no one connects. Additionally, it closes the server instantly if everyone disconnects — i.e., closes the page on their browser — to save resources, since it's designed to run even on constrained environments such as less powerful smartphones using Termux. You can access it through http://websignal.local:8080 if your device has the permissions and setup to use Multicast DNS — only privileged or "root" users in Termux, Android — or you can simply use your device's IP address on the Wi-Fi network as in http://<ip_address>:8080, which can be a common access point — meaning, that both the server and the clients are connected to it — or your own device's hotspot.
 
 Run `websignal -h` — or `cargo run -- -h` if you don't have it in your `PATH` yet — for details on the functionality, if you decide to build it locally.
