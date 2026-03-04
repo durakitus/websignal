@@ -3,6 +3,10 @@ name = "websignal"
 version = "0.1.0"
 edition = "2024"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]
 anyhow = "1.0.102"
 axum = { version = "0.8.8", features = ["ws"] }
