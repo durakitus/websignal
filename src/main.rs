@@ -36,7 +36,7 @@ const JSON_DATA: &str = include_str!("../web/manifest.json");
     name = "websignal",
     version,
     about = "A locally hosted web app for messaging and file sharing.",
-    long_about = "An offline, local messaging and file sharing web spp. Clients can access it through a standard web browser, and connect to a group chat for local messaging and sharing files over LAN."
+    long_about = "An offline, local messaging and file sharing web app. Clients can access it through a standard web browser, and connect to a group chat for local messaging and sharing files over LAN."
 )]
 struct Cli {}
 
