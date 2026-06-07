@@ -84,13 +84,7 @@ async fn main() -> Result<()> {
         shutdown_tx: shutdown_tx.clone(),
     });
 
-    let cert = generate_simple_self_signed(vec!["websignal.local".into()])?;
-    let tls_config = RustlsConfig::from_der(
-        vec![cert.cert.der().to_vec()],
-        cert.signing_key.serialize_der(),
-    )
-    .await?;
-
+    // Dynamically gather current network addresses
     let network_ips: Vec<IpAddr> = match get_if_addrs() {
         Ok(interfaces) => interfaces
             .into_iter()
@@ -99,6 +93,20 @@ async fn main() -> Result<()> {
             .collect(),
         Err(_) => vec![],
     };
+
+    // Map discovered network addresses into the certificate subjects
+    let mut cert_subjects = vec!["websignal.local".to_string()];
+    for ip in &network_ips {
+        cert_subjects.push(ip.to_string());
+    }
+
+    // Generate the certificate matching the current network topology
+    let cert = generate_simple_self_signed(cert_subjects)?;
+    let tls_config = RustlsConfig::from_der(
+        vec![cert.cert.der().to_vec()],
+        cert.signing_key.serialize_der(),
+    )
+    .await?;
 
     let bind_all = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
     let https_addr = SocketAddr::new(bind_all, 8443);
