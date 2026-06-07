@@ -1,4 +1,4 @@
-const max_file_size_mb = 100;
+const max_file_size_mb = 100 * 1024 * 1024;
 const websocket_protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 const websocket_url = `${websocket_protocol}://${window.location.hostname}:${window.location.port}/ws`;
 const socket = new WebSocket(websocket_url);
@@ -12,13 +12,12 @@ const dom_file_input = document.getElementById('file_input');
 const dom_send_button = document.getElementById('send_btn');
 const dom_attachment_button = document.getElementById('custom_file_btn');
 const dom_status_indicator = document.getElementById('status_indicator');
-const dom_transfer_progress = document.getElementById('transfer_progress');
 const dom_overlay_container = document.getElementById('user_list_overlay');
 const dom_active_users_list = document.getElementById('active_users');
 const dom_chat_scroll_area = document.getElementById('chat_area');
 
 let current_local_username = null;
-let pending_metadata = null;
+const active_incoming_streams = new Map();
 
 const scroll_to_bottom = () => {
     dom_chat_scroll_area.scrollTo({
@@ -27,10 +26,16 @@ const scroll_to_bottom = () => {
     });
 };
 
-const synchronize_identity = () => {
-    let stored_name = localStorage.getItem('username');
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        scroll_to_bottom();
+    });
+}
+
+const synchronize_identity = (force_new = false) => {
+    let stored_name = force_new ? null : localStorage.getItem('username');
     while (!stored_name) {
-        const user_prompt_input = prompt("ENTER DISPLAY NAME");
+        const user_prompt_input = prompt(force_new ? "NAME TAKEN. CHOOSE ANOTHER:" : "ENTER DISPLAY NAME");
         if (user_prompt_input === null) {
             window.location.href = "about:blank";
             return;
@@ -55,11 +60,27 @@ socket.onclose = () => {
 
 socket.onmessage = async (event) => {
     if (event.data instanceof ArrayBuffer) {
-        if (pending_metadata) {
-            const file_blob = new Blob([event.data], { type: pending_metadata.mimetype });
-            render_ui_element({ ...pending_metadata, data: file_blob, type: 'file' });
-            pending_metadata = null;
-            dom_transfer_progress.value = 0;
+        const view = new DataView(event.data);
+        const id_length = view.getUint8(0);
+        const decoder = new TextDecoder();
+        const stream_id = decoder.decode(event.data.slice(1, 1 + id_length));
+        const chunk_data = event.data.slice(1 + id_length);
+
+        const stream_context = active_incoming_streams.get(stream_id);
+        if (stream_context) {
+            stream_context.controller.enqueue(new Uint8Array(chunk_data));
+            stream_context.received += chunk_data.byteLength;
+
+            const progress_label = stream_context.ui_ref.querySelector('.byte_counter');
+            if (progress_label) {
+                const percentage = Math.round((stream_context.received / stream_context.size) * 100);
+                progress_label.textContent = `LOADING: ${percentage}%`;
+            }
+
+            if (stream_context.received >= stream_context.size) {
+                stream_context.controller.close();
+                active_incoming_streams.delete(stream_id);
+            }
         }
         return;
     }
@@ -71,6 +92,8 @@ socket.onmessage = async (event) => {
         dom_username_display.textContent = `ID: ${current_local_username}`;
         localStorage.setItem('username', current_local_username);
         dom_message_input.focus();
+    } else if (parsed_data.type === 'error') {
+        synchronize_identity(true);
     } else if (parsed_data.type === 'user_count') {
         dom_user_count.textContent = `ONLINE: ${parsed_data.count}`;
     } else if (parsed_data.type === 'user_list') {
@@ -81,8 +104,32 @@ socket.onmessage = async (event) => {
             dom_active_users_list.appendChild(list_item);
         });
     } else if (parsed_data.type === 'file_meta') {
-        pending_metadata = parsed_data;
-        dom_transfer_progress.value = 50;
+        let stream_controller;
+        const readable_stream = new ReadableStream({
+            start(controller) {
+                stream_controller = controller;
+            }
+        });
+
+        const ui_node = render_streaming_placeholder(parsed_data);
+        active_incoming_streams.set(parsed_data.stream_id, {
+            ...parsed_data,
+            received: 0,
+            controller: stream_controller,
+            ui_ref: ui_node
+        });
+
+        new Response(readable_stream).blob().then(final_blob => {
+            const final_node = build_file_node({
+                filename: parsed_data.filename,
+                data: final_blob,
+                mimetype: parsed_data.mimetype
+            });
+            const content_wrapper = ui_node.querySelector('.file_message_content');
+            content_wrapper.replaceChildren(final_node);
+            ui_node.classList.remove('transferring');
+            scroll_to_bottom();
+        });
     } else if (parsed_data.type === 'message') {
         render_ui_element(parsed_data);
     }
@@ -115,19 +162,52 @@ dom_message_input.onfocus = () => {
 
 dom_file_input.onchange = async () => {
     for (const selected_file of dom_file_input.files) {
-        if (selected_file.size > max_file_size_mb * 1024 * 1024) continue;
-        dom_transfer_progress.value = 25;
+        if (selected_file.size > max_file_size_mb) continue;
+
+        const stream_id = crypto.randomUUID();
+        const id_bytes = new TextEncoder().encode(stream_id);
 
         socket.send(JSON.stringify({
             type: 'file_meta',
+            stream_id: stream_id,
             filename: selected_file.name,
             mimetype: selected_file.type || 'application/octet-stream',
-            user: current_local_username
+            user: current_local_username,
+            size: selected_file.size
         }));
-        
-        socket.send(await selected_file.arrayBuffer());
+
+        const reader = selected_file.stream().getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const packet = new Uint8Array(1 + id_bytes.length + value.length);
+            packet[0] = id_bytes.length;
+            packet.set(id_bytes, 1);
+            packet.set(value, 1 + id_bytes.length);
+            socket.send(packet);
+        }
     }
     dom_file_input.value = '';
+};
+
+const render_streaming_placeholder = (payload) => {
+    const is_own_message = payload.user === current_local_username;
+    const message_list_item = document.createElement('li');
+    message_list_item.className = `message ${is_own_message ? 'user' : 'other'} transferring`;
+    const timestamp_string = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    message_list_item.innerHTML = `
+        <div class="meta">${payload.user} • ${timestamp_string}</div>
+        <div class="file_message_content">
+            <div class="generic_file_bubble">
+                ${payload.filename}
+                <span class="byte_counter">CONNECTING...</span>
+            </div>
+        </div>
+    `;
+    dom_messages_list.appendChild(message_list_item);
+    scroll_to_bottom();
+    return message_list_item;
 };
 
 const render_ui_element = (payload) => {
