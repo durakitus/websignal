@@ -39,6 +39,12 @@ const JS_DATA: &str = include_str!("../web/script.js");
 const JSON_DATA: &str = include_str!("../web/manifest.json");
 
 #[derive(Parser)]
+#[command(
+    name = "websignal",
+    version,
+    about = "A simple web app that lets you chat on a local network and share files.",
+    long_about = "A web app that creates a local server on your device tied to your IP address on the LAN it currently is in. To access the app site, input the IP address in your browser with the standard HTTP developer port."
+)]
 struct Cli {}
 
 #[derive(Serialize, Deserialize, Clone)]
