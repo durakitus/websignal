@@ -215,7 +215,7 @@ const render_ui_element = (payload) => {
     const message_list_item = document.createElement('li');
     message_list_item.className = `message ${is_own_message ? 'user' : 'other'}`;
     const timestamp_string = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    message_list_item.innerHTML = `<div class="meta">${payload.user} • ${timestamp_string}</div>`;
+    message_list_item.innerHTML = `<div class="meta">${payload.user} & ${timestamp_string}</div>`;
 
     if (payload.type === 'message') {
         const text_container = document.createElement('span');
@@ -246,7 +246,7 @@ const build_file_node = (file_payload) => {
 
     const video_extensions = ['mkv', 'mp4', 'webm'];
     const audio_extensions = ['mp3', 'ogg', 'flac'];
-    const image_extensions = ['jpg', 'png', 'webp', 'svg'];
+    const image_extensions = ['jpg', 'png', 'webp'];
     const text_extensions = ['md', 'txt', 'log'];
     const code_extensions = ['py', 'rs', 'kt'];
 
