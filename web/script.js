@@ -35,7 +35,7 @@ if (window.visualViewport) {
 const synchronize_identity = (force_new = false) => {
     let stored_name = force_new ? null : localStorage.getItem('username');
     while (!stored_name) {
-        const user_prompt_input = prompt(force_new ? "NAME TAKEN. CHOOSE ANOTHER:" : "ENTER DISPLAY NAME");
+        const user_prompt_input = prompt(force_new ? "NAME TAKEN. CHOOSE ANOTHER:" : "ENTER YOUR NAME");
         if (user_prompt_input === null) {
             window.location.href = "about:blank";
             return;
@@ -100,7 +100,7 @@ socket.onmessage = async (event) => {
         dom_active_users_list.innerHTML = '';
         parsed_data.users.forEach(user_entry => {
             const list_item = document.createElement('li');
-            list_item.textContent = user_entry === current_local_username ? `${user_entry} — YOU` : user_entry;
+            list_item.textContent = user_entry === current_local_username ? `@${user_entry}` : user_entry;
             dom_active_users_list.appendChild(list_item);
         });
     } else if (parsed_data.type === 'file_meta') {
@@ -244,11 +244,11 @@ const build_file_node = (file_payload) => {
     const file_extension = file_payload.filename.split('.').pop().toLowerCase();
     const mime_type_string = (file_payload.mimetype || '').toLowerCase();
 
-    const video_extensions = ['mp4', 'mkv', 'webm', 'avi', 'mov'];
-    const audio_extensions = ['mp3', 'm4a', 'ogg', 'flac', 'wav'];
-    const image_extensions = ['jpg', 'png', 'webp', 'bmp', 'svg'];
-    const text_extensions = ['md', 'txt', 'log', 'prop', 'cfg'];
-    const code_extensions = ['py', 'rs', 'kt', 'rb', 'cr'];
+    const video_extensions = ['mkv', 'mp4', 'webm'];
+    const audio_extensions = ['mp3', 'ogg', 'flac'];
+    const image_extensions = ['jpg', 'png', 'webp', 'svg'];
+    const text_extensions = ['md', 'txt', 'log'];
+    const code_extensions = ['py', 'rs', 'kt'];
 
     if (video_extensions.includes(file_extension) || mime_type_string.includes('video')) {
         media_element = document.createElement('video');
