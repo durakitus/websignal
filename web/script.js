@@ -171,7 +171,7 @@ dom_file_input.onchange = async () => {
             type: 'file_meta',
             stream_id: stream_id,
             filename: selected_file.name,
-            mimetype: selected_file.type || 'application/octet-stream',
+            mimetype: selected_file.type,
             user: current_local_username,
             size: selected_file.size
         }));
