@@ -220,7 +220,7 @@ main {
     width: 100%;
 }
 
-.file_image_fullbubble, .native_video_player {
+.file_image_bubble, .native_video_player {
     display: block;
     width: 100%;
     height: auto;
